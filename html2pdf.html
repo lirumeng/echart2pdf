@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+	<meta charset="UTF-8">
+	<title>HTML2PDF</title>
+	<style>
+		#main,
+		#container{
+			width: 800px;
+			height: 600px;
+			background: #fff;
+		}
+	</style>
+</head>
+<body>
+	<div id="main">
+		<button id="renderPdf">下载PDF</button>
+		<div id="container"></div>
+	</div>
+	
+	<script src="lib/html2canvas.js"></script>
+	<script src="lib/jsPdf.debug.js"></script>
+	<script src="lib/echarts-4.0.4.min.js"></script>
+	<script>
+		var myChart = echarts.init(document.getElementById('container'));
+
+		var option = {
+			tooltip: {
+				trigger: 'axis',
+				position: function(pt) {
+					return [pt[0], '10%'];
+				}
+			},
+			grid: {
+				top: '2%',
+				bottom: '2%',
+				left: '2%',
+				right: '3%',
+				containLabel: true
+			},
+			xAxis: {
+				type: 'category',
+				boundaryGap: false,
+				data: ['2013年', '2014年', '2015年', '2016年', '2017年', '2018年'],
+				axisLine: {
+					lineStyle: {
+						width: 2,
+						color: '#009BDB'
+					}
+				},
+				axisTick: {
+					show: false
+				},
+				axisLabel: {
+					margin: 16,
+					textStyle: {
+						fontSize: 18
+					}
+				}
+			},
+			yAxis: {
+				show: false,
+				type: 'value'
+			},
+			series: [{
+				name: '对外交流',
+				type: 'line',
+				symbol: 'none',
+				itemStyle: {
+					color: '#009BDB'
+				},
+				areaStyle: {
+					color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+						offset: 0,
+						color: 'rgba(0,155,219,.6)'
+					}, {
+						offset: 1,
+						color: 'rgba(0,155,219,0)'
+					}])
+				},
+				data: [820, 932, 901, 934, 1290, 1330],
+			}]
+		};
+
+		// console.log(option)
+		myChart.setOption(option)
+
+		var downPdf = document.getElementById("renderPdf");
+		downPdf.onclick = function() {
+			html2canvas(document.getElementById('container'), {
+				onrendered: function(canvas) {
+					console.log(canvas)
+
+					var contentWidth = canvas.height;
+					var contentHeight = canvas.height;
+
+					var pageHeight = contentWidth / 592.28 * 841.89;
+					var leftHeight = contentHeight;
+
+					var position = 0;
+					var imgWidth = 595.28;
+					var imgHeight = imgWidth / contentWidth * contentHeight;
+
+
+					//返回图片URL，参数：图片格式和清晰度(0-1)
+					var pageData = canvas.toDataURL('image/jpeg', 1.0);
+
+					//方向默认竖直，尺寸ponits，格式a4【595.28,841.89]
+					var pdf = new jsPDF('', 'pt', 'a4');
+
+					if (leftHeight < pageHeight) {
+						//需要dataUrl格式
+						pdf.addImage(pageData, 'JPEG', 0, 0, imgWidth, imgHeight);
+					} else {
+						while (leftHeight > 0) {
+							pdf.addImage(pageData, 'JPEG', 0, position, imgWidth, imgHeight);
+							leftHeight -= pageHeight;
+							position -= 841.89
+
+							if (leftHeight > 0) {
+								pdf.addPage()
+							}
+						}
+					}
+					pdf.save('content.pdf');
+				}
+			})
+		}
+	</script>
+</body>
+</html>
